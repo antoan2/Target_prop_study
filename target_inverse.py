@@ -123,7 +123,7 @@ if __name__ == '__main__':
     y = T.ivector()
     index = T.lscalar()
 
-    n_exp = 3
+    n_exp = 500
     plot_option = args.plot_option
     save_option = args.save_option
     nX, nH1, nH2, nY = 784, 1500, 1500, 10
@@ -157,7 +157,7 @@ if __name__ == '__main__':
 
     # best_cost = float('inf')
     for current_batch in xrange(n_exp):
-        mean_cost = np.asarray([cost_train(i) for i in xrange(50)]).mean()
+        mean_cost = np.asarray([cost_train(i) for i in xrange(n_train_batches)]).mean()
         [current_cost, cost_target_1, cost_target_2, cost_inverse_mapping_1, h1, h2] = one_step_train(current_batch)
         saving.add_to_channel('current_train_cost', current_batch, current_cost)
         saving.add_to_channel('train_cost', current_batch, mean_cost)
