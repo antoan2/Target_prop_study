@@ -1,6 +1,8 @@
 from theano import function
 from utils import datasets
 import numpy as np
+import os
+import pickle
 import theano
 import theano.tensor as T
 import matplotlib.pyplot as plt
@@ -8,7 +10,7 @@ import argparse
 
 class Saving(object):
 
-    def __init__(self, channel_dict, n_exp):
+    def __init__(self, channel_dict=[], n_exp=0):
 
         self.saving_dict = dict()
         for channel in channel_dict:
@@ -23,6 +25,9 @@ class Saving(object):
     def plot(self, channel, ax):
         ax.set_title(channel)
         ax.plot(self.saving_dict[channel])
+
+    def load_pickle(self, pickle_name):
+        self.saving_dict = pickle.load(open(pickle_name, 'rb'))
 
 class BFAE(object):
 
@@ -102,7 +107,14 @@ class BFAE(object):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='run an taget inverse mapping') 
-    dataset_file = '/media/tonio/HDD2/Documents/Stage/TargetProp_study/TheanoTests/mnist.pkl.gz'
+    parser.add_argument('--plot', dest='plot_option', type=bool, default=False,
+                        help='if the script will plot some results')
+    parser.add_argument('--save', dest='save_option', type=bool, default=True,
+                        help='if the script will save some results')
+    args = parser.parse_args()
+    print(args)
+
+    dataset_file = os.environ['MNIST_LOCATION']
     [(train_set_x, train_set_y),\
     (valid_set_x, valid_set_y),\
     (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
@@ -111,8 +123,9 @@ if __name__ == '__main__':
     y = T.ivector()
     index = T.lscalar()
 
-    n_exp = 10
-    plot_option = True
+    n_exp = 500
+    plot_option = args.plot_option
+    save_option = args.save_option
     nX, nH1, nH2, nY = 784, 1500, 1500, 10
     lr_t_2 = 5.
     lr_f_1, lr_f_2, lr_f_3, lr_b_2 = 5., 0.005, 0.15, 0.00001
@@ -155,7 +168,16 @@ if __name__ == '__main__':
         print('cost target 2: '+str(cost_target_2))
         print('cost inverse: '+str(cost_inverse_mapping_1))
 
+
+    if save_option:
+        print('Saving results')
+        filename = os.environ['TARGET_RESULTS'] + '/test_file.pkl'
+        print(filename)
+        file_result = open(filename, 'w')
+        pickle.dump(saving.saving_dict, file_result)
+
     if plot_option:
+        print('Ploting results')
         fig = plt.figure()
         ax = fig.add_subplot(121)
         saving.plot('current_train_cost', ax)
