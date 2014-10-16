@@ -107,9 +107,9 @@ class BFAE(object):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='run an taget inverse mapping') 
-    parser.add_argument('--plot', dest='plot_option', type=bool, default=False,
+    parser.add_argument('--plot', dest='plot_option',
                         help='if the script will plot some results')
-    parser.add_argument('--save', dest='save_option', type=bool, default=True,
+    parser.add_argument('--save', dest='save_option',
                         help='if the script will save some results')
     args = parser.parse_args()
     print(args)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     y = T.ivector()
     index = T.lscalar()
 
-    n_exp = 500
+    n_exp = 3
     plot_option = args.plot_option
     save_option = args.save_option
     nX, nH1, nH2, nY = 784, 1500, 1500, 10
