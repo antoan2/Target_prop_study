@@ -30,7 +30,7 @@ class Saving(object):
     def load_pickle(self, pickle_name):
         self.saving_dict = pickle.load(open(pickle_name, 'rb'))
 
-class BFAE(object):
+class target_inverse(object):
 
     def __init__(self, inputs, labels):
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     lr_t_2 = 5.
     lr_f_1, lr_f_2, lr_f_3, lr_b_2 = 5., 0.005, 0.15, 0.00001
     batch_size = 100
-    model = BFAE(x, y)
+    model = target_inverse(x, y)
 
     one_step_train = function(inputs=[index],
                             outputs=[model.final_cost, model.cost_target_1, model.cost_target_2, model.cost_inverse_mapping_1, model.h1, model.h2],
