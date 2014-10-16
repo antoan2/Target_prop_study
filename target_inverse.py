@@ -1,6 +1,7 @@
 from theano import function
 from utils import datasets
 import numpy as np
+import time
 import os
 import pickle
 import theano
@@ -157,6 +158,7 @@ if __name__ == '__main__':
 
     # best_cost = float('inf')
     for current_batch in xrange(n_exp):
+        t0 = time.clock()
         mean_cost = np.asarray([cost_train(i) for i in xrange(n_train_batches)]).mean()
         [current_cost, cost_target_1, cost_target_2, cost_inverse_mapping_1, h1, h2] = one_step_train(current_batch)
         saving.add_to_channel('current_train_cost', current_batch, current_cost)
@@ -167,6 +169,9 @@ if __name__ == '__main__':
         print('cost target 1: '+str(cost_target_1))
         print('cost target 2: '+str(cost_target_2))
         print('cost inverse: '+str(cost_inverse_mapping_1))
+        
+        t1 = time.clock()
+        print('time batch: '+str(t1-t0))
 
 
     if save_option:
