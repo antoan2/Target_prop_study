@@ -6,7 +6,7 @@ import numpy as np
 
 def load_dataset(file_name):
 
-    data_file = gzip.open(file_name, 'rb')
+    data_file = open(file_name, 'rb')
     train_set, valid_set, test_set = cPickle.load(data_file)
     data_file.close()
 
