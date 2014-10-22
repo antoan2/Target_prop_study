@@ -49,10 +49,10 @@ class target_inverse(object):
         self.b3 = self.init_parameters((nY,), 0, 0)
         
         # definition of the mappings
-        self.f1 = lambda input : T.tanh(T.dot(input, self.W1) + self.b1)
-        self.f2 = lambda h1 : T.tanh(T.dot(h1, self.W2) + self.b2)
-        self.g2 = lambda h2 : T.tanh(T.dot(h2, self.V2) + self.c2)
-        self.f3 = lambda h2 : T.nnet.softmax(T.dot(self.h2, self.W3) + self.b3)
+        self.f1 = lambda h : T.tanh(T.dot(h, self.W1) + self.b1)
+        self.f2 = lambda h : T.tanh(T.dot(h, self.W2) + self.b2)
+        self.g2 = lambda h : T.tanh(T.dot(h, self.V2) + self.c2)
+        self.f3 = lambda h : T.nnet.softmax(T.dot(h, self.W3) + self.b3)
 
         # computation of the forward propagation
         self.h1 = self.f1(inputs)
