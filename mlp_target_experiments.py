@@ -211,9 +211,9 @@ if __name__ == '__main__':
     best_lr_g = []
     best_error = np.inf
 
-    interval_t = (-1, 2)
-    intervals_f = ((-1, 2), (-3, 1), (-1, 2), (-4, 1))
-    intervals_g = ((-9, -5), (-7, -2))
+    interval_t = (-2, 2)
+    intervals_f = ((-4, 2), (-4, 2), (-4, 2), (-4, 1))
+    intervals_g = ((-9, -2), (-9, -2))
     learning_rates_f = np.zeros(4)
     learning_rates_g = np.zeros(2)
     for i in range(100):
