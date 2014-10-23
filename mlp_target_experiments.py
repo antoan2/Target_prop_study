@@ -225,6 +225,7 @@ if __name__ == '__main__':
         for i in range(len(learning_rates_g)):
             learning_rates_g[i] = 10**(intervals_g[i][0]+(intervals_g[i][1]-intervals_g[i][0])*np.random.rand())
         learning_rates_g = learning_rates_g.astype(theano.config.floatX)
+        print(learning_rate_t)
         print(learning_rates_f)
         print(learning_rates_g)
         current_error = learning_target(learning_rate_t, learning_rates_f, learning_rates_g)
