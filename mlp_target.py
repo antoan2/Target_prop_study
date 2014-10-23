@@ -133,16 +133,18 @@ dataset_file = 'datasets/ellipse_50000.pkl'
 # experience parameters
 layer_dimensions = [2, 3, 3, 3, 2]
 # lr_f is n_layers long, lr_g is n_layers-2 long
-learning_rate_t = .1
-learning_rates_f = [.9, .9, .9, .05]
+learning_rate_t = .5
+learning_rates_f = [9., 9., 9., .1]
 learning_rates_g = [4e-8, 8e-8]
 #learning_rates_f = [20., .7, .7, .6]
 #learning_rates_g = [7e-8, 2e-3]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
 n_batch_train_compute = 100
-n_exp = 1000
-d = 0.00
+n_exp = 4000
+d_t = 5.
+d_f = .5
+d_g = .5
 
 # initialization mlp
 x = T.fmatrix()
@@ -191,10 +193,12 @@ for current_batch in xrange(n_exp):
  
     if current_batch%n_batch_train == 0:
         epoch = current_batch/n_batch_train
-        for i in xrange(len(classif.lr_f)):
-            classif.lr_f[i] = learning_rates_f[i]/(1.+d*epoch)
+        classif.lr_t = learning_rate_t/(1.+d_t*epoch)
+        for i in xrange(len(classif.lr_f)-1):
+            classif.lr_f[i] = learning_rates_f[i]/(1.+d_f*epoch)
+        classif.lr_f[-1] = learning_rates_f[-1]/(1.+0.1*d_f*epoch)
         for i in xrange(len(classif.lr_g)):
-            classif.lr_g[i] = learning_rates_g[i]/(1.+d*epoch)
+            classif.lr_g[i] = learning_rates_g[i]/(1.+d_g*epoch)
  
     index_tab = current_batch
     current_batch = current_batch%n_batch_train 
@@ -209,6 +213,9 @@ for current_batch in xrange(n_exp):
     error_tab[index_tab] = mean_error
     # print(cost)
     print(index_tab)
+    print(classif.lr_t)
+    print(classif.lr_f)
+    print(classif.lr_g)
     print(mean_cost)
     print(mean_error)
 # 
@@ -248,7 +255,7 @@ print(x_2.shape)
 
 if bool_plot_final:
     fig = plt.figure()
-    fig.suptitle('cost and error')
+    fig.suptitle('cost and error - targetprop')
     ax = fig.add_subplot(121)
     ax.plot(cost_tab)
     ax.set_title('cost function')
@@ -269,7 +276,7 @@ if bool_plot_final:
     for i in xrange(len(hs[0])-1):
         print(i)
         fig = plt.figure()
-        fig.suptitle('layer '+str(i))
+        fig.suptitle('layer '+str(i)+' - targetprop')
         if (classif.n_layers>i) and (i>0):
             ax = fig.add_subplot(111, projection='3d')
             for p in xrange(2):

@@ -88,7 +88,7 @@ learning_rates = [0.1, 0.1, 0.1, 0.1, 0.1]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
 n_batch_train_compute = 100
-n_exp = 8000
+n_exp = 2000
 d = 0.05
 
 # initialization mlp
@@ -184,7 +184,7 @@ print(x_2.shape)
 
 if bool_plot_final:
     fig = plt.figure()
-    fig.suptitle('cost and error')
+    fig.suptitle('cost and error - backprop')
     ax = fig.add_subplot(121)
     ax.plot(cost_tab)
     ax.set_title('cost function')
@@ -205,7 +205,7 @@ if bool_plot_final:
     for i in xrange(len(hs[0])-1):
         print(i)
         fig = plt.figure()
-        fig.suptitle('layer '+str(i))
+        fig.suptitle('layer '+str(i)+' - backprop')
         if (classif.n_layers>i) and (i>0):
             ax = fig.add_subplot(111, projection='3d')
             for p in xrange(2):
