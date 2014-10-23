@@ -83,7 +83,7 @@ dataset_file = 'datasets/ellipse_50000.pkl'
        (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
 # experience parameters
-layer_dimensions = [2, 3, 3, 3, 3, 2]
+layer_dimensions = [2, 3, 3, 3, 2]
 learning_rates = [0.1, 0.1, 0.1, 0.1, 0.1]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
@@ -166,7 +166,7 @@ if bool_save:
     weights = []
     for i in xrange(classif.n_layers):
         weights.append((classif_best.layers[i].W.get_value(), classif_best.layers[i].b.get_value()))
-    file_to_save = open('temp_save_2.pkl', 'w')
+    file_to_save = open('temp_save.pkl', 'w')
     cPickle.dump(weights, file_to_save)
     file_to_save.close()
 

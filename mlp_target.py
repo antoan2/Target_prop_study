@@ -11,10 +11,11 @@ np.random.seed(453)
 
 class mlp_target(object):
 
-    def __init__(self, inputs, labels, layer_dimensions, learning_rates_f, learning_rates_g, weights=None, activation='tanh'):
+    def __init__(self, inputs, labels, layer_dimensions, learning_rate_t, learning_rates_f, learning_rates_g, weights=None, activation='tanh'):
 
         # initialisation of the composition paarameters
         self.layer_dimensions = layer_dimensions
+        self.lr_t = learning_rate_t
         self.lr_f = learning_rates_f
         self.lr_g = learning_rates_g
         self.n_layers = len(layer_dimensions) - 1
@@ -46,7 +47,7 @@ class mlp_target(object):
         # list to store the targets of the targets
         self.variables_targets = []
         # last layer target obtained by gradient descent on the layer before the softmax
-        temp_target = self.variables[-2]-self.lr_f[-2]*T.grad(self.cost, self.variables[-2])
+        temp_target = self.variables[-2]-self.lr_t*T.grad(self.cost, self.variables[-2])
         self.variables_targets.append(temp_target)
         for i in xrange(self.n_layers-2, -1, -1):
             temp_target = self.variables[i]
@@ -55,9 +56,9 @@ class mlp_target(object):
             self.variables_targets.append(temp_target)
         self.variables_targets.reverse()
 
-        for i in xrange(self.n_layers-1):
-            self.variables_targets[i] = self.variables[i] - 0.01*(self.variables_targets[i] - self.variables[i]) \
-                                       /(self.variables_targets[i] - self.variables[i]).norm(1)
+        # for i in xrange(self.n_layers-1):
+            # self.variables_targets[i] = self.variables[i] - 0.01*(self.variables_targets[i] - self.variables[i]) \
+                                       # /(self.variables_targets[i] - self.variables[i]).norm(1)
         
         # list for the updates
         self.updates = []
@@ -108,8 +109,8 @@ class Layer(object):
         else:
             self.W = self.init_parameters((nI, nO), 1., 0)
             self.b = self.init_parameters((nO,), 0, 0)
-            self.V = self.init_parameters((nO, nI), 1., 0)
-            # self.V = theano.shared(self.W.get_value().T)
+            # self.V = self.init_parameters((nO, nI), 1., 0)
+            self.V = theano.shared(self.W.get_value().T)
             self.c = self.init_parameters((nI,), 0, 0)
 
         if activation=='tanh':
@@ -132,19 +133,22 @@ dataset_file = 'datasets/ellipse_50000.pkl'
 # experience parameters
 layer_dimensions = [2, 3, 3, 3, 2]
 # lr_f is n_layers long, lr_g is n_layers-2 long
-learning_rates_f = [0.01, 0.01, 0.01, 0.01, 0.01]
-learning_rates_g = [0.01, 0.01, 0.01]
+learning_rate_t = .1
+learning_rates_f = [.9, .9, .9, .05]
+learning_rates_g = [4e-8, 8e-8]
+#learning_rates_f = [20., .7, .7, .6]
+#learning_rates_g = [7e-8, 2e-3]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
 n_batch_train_compute = 100
-n_exp = 20
-d = 0.05
+n_exp = 1000
+d = 0.00
 
 # initialization mlp
 x = T.fmatrix()
 y = T.ivector()
 index = T.lscalar()
-classif = mlp_target(x, y, layer_dimensions, learning_rates_f, learning_rates_g)
+classif = mlp_target(x, y, layer_dimensions, learning_rate_t, learning_rates_f, learning_rates_g)
 
 output_list = [classif.cost]
 output_list.extend(classif.cost_targets)
@@ -175,9 +179,9 @@ error_train = function(inputs=[index],
                         # y:train_set_y[batch_size*index:batch_size*(index+1)]})
 
 # learning parameters
-bool_plot_final = False
+bool_plot_final = True
 bool_plot_learning = False
-bool_save = True
+bool_save = False
 
 # initialization learning variables
 cost_tab = np.zeros(n_exp)
@@ -187,8 +191,10 @@ for current_batch in xrange(n_exp):
  
     if current_batch%n_batch_train == 0:
         epoch = current_batch/n_batch_train
-        # for i in xrange(len(learning_rates)):
-            # classif.learning_rates[i] = learning_rates[i]/(1+d*epoch)
+        for i in xrange(len(classif.lr_f)):
+            classif.lr_f[i] = learning_rates_f[i]/(1.+d*epoch)
+        for i in xrange(len(classif.lr_g)):
+            classif.lr_g[i] = learning_rates_g[i]/(1.+d*epoch)
  
     index_tab = current_batch
     current_batch = current_batch%n_batch_train 
@@ -201,7 +207,7 @@ for current_batch in xrange(n_exp):
     cost = one_step_train(current_batch)
     cost_tab[index_tab] = mean_cost
     error_tab[index_tab] = mean_error
-    print(cost)
+    # print(cost)
     print(index_tab)
     print(mean_cost)
     print(mean_error)
@@ -223,7 +229,8 @@ if bool_save:
         else:
             weights.append((classif_best.layers[i].W.get_value(), classif_best.layers[i].b.get_value()))
         
-    file_to_save = open('mlp_target.pkl', 'w')
+    print('Saving')
+    file_to_save = open('mlp_target_best.pkl', 'w')
     cPickle.dump(weights, file_to_save)
     file_to_save.close()
 # 
