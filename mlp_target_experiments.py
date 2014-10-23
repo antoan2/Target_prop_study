@@ -9,14 +9,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 import argparse
 
-# np.random.seed(453)
+np.random.seed(453)
 
 class mlp_target(object):
 
-    def __init__(self, inputs, labels, layer_dimensions, learning_rates_f, learning_rates_g, weights=None, activation='tanh'):
+    def __init__(self, inputs, labels, layer_dimensions, learning_rate_t, learning_rates_f, learning_rates_g, weights=None, activation='tanh'):
 
         # initialisation of the composition paarameters
         self.layer_dimensions = layer_dimensions
+        self.lr_t = learning_rate_t
         self.lr_f = learning_rates_f
         self.lr_g = learning_rates_g
         self.n_layers = len(layer_dimensions) - 1
@@ -48,7 +49,7 @@ class mlp_target(object):
         # list to store the targets of the targets
         self.variables_targets = []
         # last layer target obtained by gradient descent on the layer before the softmax
-        temp_target = self.variables[-2]-self.lr_f[-2]*T.grad(self.cost, self.variables[-2])
+        temp_target = self.variables[-2]-self.lr_t*T.grad(self.cost, self.variables[-2])
         self.variables_targets.append(temp_target)
         for i in xrange(self.n_layers-2, -1, -1):
             temp_target = self.variables[i]
@@ -126,20 +127,20 @@ class Layer(object):
         return theano.shared(np.random.standard_normal(shape).astype(dtype=theano.config.floatX)*std + mean)
 
 
-def learning_target(learning_rates_f, learning_rates_g):
+def learning_target(learning_rate_t, learning_rates_f, learning_rates_g):
     # experience parameters
     layer_dimensions = [2, 3, 3, 3, 2]
     # fixed hyperparameters
     batch_size = 200
     n_batch_train = train_set_x.get_value().shape[0]/batch_size
     n_batch_train_compute = 100
-    n_exp = 20
+    n_exp = 2000
 
     # initialization mlp
     x = T.fmatrix()
     y = T.ivector()
     index = T.lscalar()
-    classif = mlp_target(x, y, layer_dimensions, learning_rates_f, learning_rates_g)
+    classif = mlp_target(x, y, layer_dimensions, learning_rate_t, learning_rates_f, learning_rates_g)
 
     one_step_train = function(inputs=[index],
                         outputs=classif.cost,
@@ -177,6 +178,8 @@ def learning_target(learning_rates_f, learning_rates_g):
             sys.stdout.flush()
             return np.inf
         mean_error = np.asarray([error_train(i) for i in xrange(n_batch_train_compute)]).mean()
+        if mean_error < best_error:
+            best_error = mean_error
         one_step_train(current_batch)
         
         sys.stdout.write('\rbatch %d mean_cost %f mean_error %f'%(index_tab, mean_cost, mean_error))
@@ -198,19 +201,24 @@ if __name__ == '__main__':
            (valid_set_x, valid_set_y), \
            (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
+    tab_lr_t = 0
     tab_lr_f = []
     tab_lr_g = []
     tab_error = []
 
+    best_lr_t = []
     best_lr_f = []
     best_lr_g = []
     best_error = np.inf
+
+    interval_t = (-1, 2)
     intervals_f = ((-1, 2), (-3, 1), (-1, 2), (-4, 1))
     intervals_g = ((-9, -5), (-7, -2))
     learning_rates_f = np.zeros(4)
     learning_rates_g = np.zeros(2)
-    for i in range(10):
+    for i in range(100):
         print('\nexperiment '+str(i))
+        learning_rate_t = 10**(interval_t[0]+(interval_t[1]-interval_t[0])*np.random.rand())
         for i in range(len(learning_rates_f)):
             learning_rates_f[i] = 10**(intervals_f[i][0]+(intervals_f[i][1]-intervals_f[i][0])*np.random.rand())
         learning_rates_f = learning_rates_f.astype(theano.config.floatX)
@@ -219,17 +227,20 @@ if __name__ == '__main__':
         learning_rates_g = learning_rates_g.astype(theano.config.floatX)
         print(learning_rates_f)
         print(learning_rates_g)
-        current_error = learning_target(learning_rates_f, learning_rates_g)
+        current_error = learning_target(learning_rate_t, learning_rates_f, learning_rates_g)
+        tab_lr_t.append(learning_rate_t)
         tab_lr_f.append(learning_rates_f)
         tab_lr_g.append(learning_rates_g)
         tab_error.append(current_error)
         if current_error < best_error:
+            best_lr_t = learning_rate_t
             best_lr_f = learning_rates_f
             best_lr_g = learning_rates_g
             best_error = current_error
 
     print('\nbest_parameters :')
     print('best_error : '+str(best_error))
+    print('best_lr_t : '+str(best_lr_t))
     print('best_lr_f : '+str(best_lr_f))
     print('best_lr_g : '+str(best_lr_g))
 
