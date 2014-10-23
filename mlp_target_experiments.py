@@ -134,7 +134,7 @@ def learning_target(learning_rate_t, learning_rates_f, learning_rates_g):
     batch_size = 200
     n_batch_train = train_set_x.get_value().shape[0]/batch_size
     n_batch_train_compute = 100
-    n_exp = 2000
+    n_exp = 20
 
     # initialization mlp
     x = T.fmatrix()
@@ -201,7 +201,7 @@ if __name__ == '__main__':
            (valid_set_x, valid_set_y), \
            (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
-    tab_lr_t = 0
+    tab_lr_t = []
     tab_lr_f = []
     tab_lr_g = []
     tab_error = []
