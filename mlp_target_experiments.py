@@ -7,6 +7,7 @@ import cPickle
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sys
+import argparse
 
 # np.random.seed(453)
 
@@ -124,11 +125,6 @@ class Layer(object):
     def init_parameters(self, shape, std, mean):
         return theano.shared(np.random.standard_normal(shape).astype(dtype=theano.config.floatX)*std + mean)
 
-# initialisation dataset
-dataset_file = 'datasets/ellipse_50000.pkl'
-[(train_set_x, train_set_y), \
-       (valid_set_x, valid_set_y), \
-       (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
 def learning_target(learning_rates_f, learning_rates_g):
     # experience parameters
@@ -190,44 +186,65 @@ def learning_target(learning_rates_f, learning_rates_g):
     sys.stdout.flush()
     return mean_error
 
-tab_lr_f = []
-tab_lr_g = []
-tab_error = []
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description='run experiments')
+    parser.add_argument('save_name', type=str)
+    args = parser.parse_args()
 
-best_lr_f = []
-best_lr_g = []
-best_error = np.inf
-for i in range(10):
-    print('\nexperiment '+str(i))
-    learning_rates_f = (10**(-7+(2+7)*np.random.rand(1, 4))).astype(theano.config.floatX)
-    learning_rates_g = (10**(-7+(2+7)*np.random.rand(1, 2))).astype(theano.config.floatX)
-    print(learning_rates_f)
-    print(learning_rates_g)
-    current_error = learning_target(learning_rates_f[0], learning_rates_g[0])
-    tab_lr_f.append(learning_rates_f)
-    tab_lr_g.append(learning_rates_g)
-    tab_error.append(current_error)
-    if current_error < best_error:
-        best_lr_f = learning_rates_f
-        best_lr_g = learning_rates_g
-        best_error = current_error
+    # initialisation dataset
+    dataset_file = 'datasets/ellipse_50000.pkl'
+    [(train_set_x, train_set_y), \
+           (valid_set_x, valid_set_y), \
+           (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
-print('\nbest_parameters :')
-print('best_error : '+str(best_error))
-print('best_lr_f : '+str(best_lr_f))
-print('best_lr_g : '+str(best_lr_g))
+    tab_lr_f = []
+    tab_lr_g = []
+    tab_error = []
 
-tab_error = np.asarray(tab_error)
-tab_lr_f = np.asarray(tab_lr_f)
-tab_lr_g = np.asarray(tab_lr_g)
+    best_lr_f = []
+    best_lr_g = []
+    best_error = np.inf
+    intervals_f = ((-1, 2), (-3, 1), (-1, 2), (-4, 1))
+    intervals_g = ((-9, -5), (-7, -2))
+    learning_rates_f = np.zeros(4)
+    learning_rates_g = np.zeros(2)
+    for i in range(10):
+        print('\nexperiment '+str(i))
+        for i in range(len(learning_rates_f)):
+            learning_rates_f[i] = 10**(intervals_f[i][0]+(intervals_f[i][1]-intervals_f[i][0])*np.random.rand())
+        learning_rates_f = learning_rates_f.astype(theano.config.floatX)
+        for i in range(len(learning_rates_g)):
+            learning_rates_g[i] = 10**(intervals_g[i][0]+(intervals_g[i][1]-intervals_g[i][0])*np.random.rand())
+        learning_rates_g = learning_rates_g.astype(theano.config.floatX)
+        print(learning_rates_f)
+        print(learning_rates_g)
+        current_error = learning_target(learning_rates_f, learning_rates_g)
+        tab_lr_f.append(learning_rates_f)
+        tab_lr_g.append(learning_rates_g)
+        tab_error.append(current_error)
+        if current_error < best_error:
+            best_lr_f = learning_rates_f
+            best_lr_g = learning_rates_g
+            best_error = current_error
 
-print(tab_error)
-ind = tab_error.argsort()
-tab_error = tab_error[ind]
-tab_lr_f = tab_lr_f[ind]
-tab_lr_g = tab_lr_g[ind]
-params = dict()
-params['error'] = tab_error
-params['lr_f'] = tab_lr_f
-params['lr_g'] = tab_lr_g
-cPickle.dump(open('best_params', 'w'))
+    print('\nbest_parameters :')
+    print('best_error : '+str(best_error))
+    print('best_lr_f : '+str(best_lr_f))
+    print('best_lr_g : '+str(best_lr_g))
+
+    tab_error = np.asarray(tab_error)
+    tab_lr_f = np.asarray(tab_lr_f)
+    tab_lr_g = np.asarray(tab_lr_g)
+
+    ind = tab_error.argsort()
+    tab_error = tab_error[ind]
+    tab_lr_f = tab_lr_f[ind]
+    tab_lr_g = tab_lr_g[ind]
+    params = dict()
+    params['error'] = tab_error
+    params['lr_f'] = tab_lr_f
+    params['lr_g'] = tab_lr_g
+
+    print('saving')
+    cPickle.dump(params, open(args.save_name, 'w'))
