@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 import argparse
 
-np.random.seed(453)
+# np.random.seed(453)
 
 class mlp_target(object):
 
