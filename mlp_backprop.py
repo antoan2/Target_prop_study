@@ -21,12 +21,17 @@ class mlp_backprop(object):
         # initialisation of the layers
         self.layers = []
         # parameters for the mappings
-        for i in xrange(self.n_layers):
+        for i in xrange(self.n_layers-1):
             if not weights == None:
                 current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], weights=weights[i], activation=activation)
             else:
                 current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], activation=activation)
             self.layers.append(current_layer)
+        if not weights == None:
+            current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], weights=weights[i], activation='softmax')
+        else:
+            current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], activation='softmax')
+        self.layers.append(current_layer)
 
         # computation of the hidden layers
         self.variables = []
@@ -35,7 +40,7 @@ class mlp_backprop(object):
             self.variables.append(self.layers[i].f(self.variables[i]))
 
         # classifier
-        self.p_y_given_x = T.nnet.softmax(self.variables[self.n_layers])
+        self.p_y_given_x = self.variables[-1]
         self.predict = T.argmax(self.p_y_given_x, axis=1)
 
         # costs
@@ -70,6 +75,8 @@ class Layer(object):
             f_act = lambda h: T.tanh(h)
         elif activation=='sigmoid':
             f_act = lambda h: T.nnet.sigmoid(h)
+        elif activation=='softmax':
+            f_act = lambda h: T.nnet.softmax(h)
 
         self.f = lambda h: f_act(T.dot(h, self.W) + self.b)
 
@@ -77,7 +84,7 @@ class Layer(object):
         return theano.shared(np.random.standard_normal(shape).astype(dtype=theano.config.floatX)*std + mean)
 
 # initialisation dataset
-dataset_file = 'datasets/ellipse_50000.pkl'
+dataset_file = 'datasets/circles_50000.pkl'
 [(train_set_x, train_set_y), \
        (valid_set_x, valid_set_y), \
        (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
@@ -88,8 +95,8 @@ learning_rates = [0.1, 0.1, 0.1, 0.1, 0.1]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
 n_batch_train_compute = 100
-n_exp = 2000
-d = 0.05
+n_exp = 800
+d = 0.5
 
 # initialization mlp
 x = T.fmatrix()
