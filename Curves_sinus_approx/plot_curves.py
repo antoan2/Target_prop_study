@@ -5,6 +5,7 @@ import cPickle
 costs_backprop = cPickle.load(open('backprop.pkl', 'r'))['costs']
 costs_sgd = cPickle.load(open('target_sgd.pkl', 'r'))['costs']
 costs_momentum = cPickle.load(open('target_momentum.pkl', 'r'))['costs']
+costs_momentum_no_inverse = cPickle.load(open('target_momentum_no_inverse.pkl', 'r'))['costs']
 costs_adagrad = cPickle.load(open('target_adagrad.pkl', 'r'))['costs']
 
 fig_final = plt.figure('Final costs')
@@ -43,4 +44,12 @@ ax.legend(lines, ['target, sgd', 'target, momentum', 'target, adagrad'])
 ax.set_xlabel('batches seen')
 ax.set_ylabel('$\log(||\hat{h_2}-f_2(g_2(\hat{h_2}))||^2)$')
 
+fig_no_inverse = plt.figure('Learning inverse')
+ax = fig_no_inverse.add_subplot(111)
+ax.set_title('Final cost')
+final_costs = np.vstack([costs_momentum[:, 0], costs_momentum_no_inverse[:, 0]]).T
+lines = ax.semilogy(final_costs)
+ax.legend(lines, ['target w/ inverse leanring', 'target w/o inverse learning'])
+ax.set_xlabel('batches seen')
+ax.set_ylabel('$\log(||y-f_1(f_2(f_3(x)))||^2)$')
 plt.show()
