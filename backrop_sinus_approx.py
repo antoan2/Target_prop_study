@@ -18,7 +18,7 @@ def init_parameters_b(shape):
 mse = lambda h, hh : T.sqr(h - hh).mean()
 
 n_samples = 10000
-n_epochs = 30
+n_epochs = 50
 interval = 2*np.pi
 noise = 0.1
 batch_size = 100
