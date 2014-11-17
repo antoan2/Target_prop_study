@@ -80,11 +80,11 @@ cost = mse(predictions, y)
 
 gradient_norm = T.grad(cost, h2).norm(2).mean()
 hh2 = h2 - lr_t*T.grad(cost, h2)
-norm_2 = (hh2 - h2).norm(2, axis=1).mean()
-hh2 = h2 + 0.1/gradient_norm*(hh2 - h2)/norm_2
+#norm_2 = (hh2 - h2).norm(2, axis=1).mean()
+#hh2 = h2 + 0.1/gradient_norm*(hh2 - h2)/norm_2
 hh1 = h1 + g2(hh2) - g2(h2)
-norm_1 = (hh1 - h1).norm(2, axis=1).mean()
-hh1 = h1 + 0.1/gradient_norm*(hh1 - h1)/norm_1
+#norm_1 = (hh1 - h1).norm(2, axis=1).mean()
+#hh1 = h1 + 0.1/gradient_norm*(hh1 - h1)/norm_1
 
 get_targets = function(inputs=[x, y],
                             outputs=[hh1, hh2])

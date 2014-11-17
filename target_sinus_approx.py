@@ -25,11 +25,11 @@ noise = 0.1
 batch_size = 100
 
 dim = [1, 50, 50, 1]
-d = 0.005
-lrs_f = np.asarray([.1, .1, .1], dtype='float32')
+d = 0.05
+lrs_f = np.asarray([.1, .1, .01], dtype='float32')
 params = []
-lr_t = np.asarray(.1, dtype='float32')
-lr_g = np.asarray(.1, dtype='float32')
+lr_t = np.asarray(.01, dtype='float32')
+lr_g = np.asarray(.001, dtype='float32')
 lrs = []
 
 x_train_set_np = interval*np.random.rand(n_samples)

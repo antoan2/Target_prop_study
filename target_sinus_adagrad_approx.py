@@ -27,10 +27,10 @@ epsilon = 1e-6
 
 dim = [1, 50, 50, 1]
 d = 0.005
-lrs_f = np.asarray([.1, .1, .1], dtype='float32')
+lrs_f = np.asarray([.01, .01, .01], dtype='float32')
 params = []
-lr_t = np.asarray(.1, dtype='float32')
-lr_g = np.asarray(.1, dtype='float32')
+lr_t = np.asarray(.01, dtype='float32')
+lr_g = np.asarray(.001, dtype='float32')
 momentum = 0.3
 lrs = []
 
@@ -79,12 +79,13 @@ get_variables = function(inputs=[x],
 
 cost = mse(predictions, y)
 
+gradient_norm = T.grad(cost, h2).norm(2).mean()
 hh2 = h2 - lr_t*T.grad(cost, h2)
 #norm_2 = (hh2 - h2).norm(2, axis=1).mean()
-#hh2 = h2 - 0.1*(hh2 - h2)/norm_2
+#hh2 = h2 - 0.1/gradient_norm*(hh2 - h2)/norm_2
 hh1 = h1 + g2(hh2) - g2(h2)
 #norm_1 = (hh1 - h1).norm(2, axis=1).mean()
-#hh1 = h1 - 0.1*(hh1 - h1)/norm_1
+#hh1 = h1 - 0.1/gradient_norm*(hh1 - h1)/norm_1
 
 get_targets = function(inputs=[x, y],
                             outputs=[hh1, hh2])
