@@ -1,122 +1,121 @@
 import numpy as np
+import theano
 import sys
+import theano.tensor as T
+import utils.init_functions as ifunc
 from theano import function
 import matplotlib.pyplot as plt
-import theano
-import theano.tensor as T
+from collections import OrderedDict
+from itertools import izip
+import utils.learning_rules as ulru
 import utils.plot_tools as uplot
+
+def get_updates_lrs(d, current_epoch, lrs, lrs_i):
+    updates = OrderedDict()
+    for lr, lr_i in izip(lrs.values(), lrs_i):
+        updates[lr] = lr_i/(1.+d*current_epoch)
+    return updates
 
 np.random.seed(53)
 
-def init_parameters_W(shape):
-    std = 2.*(6./(shape[0] + shape[1]))**(0.5)
-    return theano.shared(np.random.standard_normal(shape).astype(dtype=theano.config.floatX)*std)
-
-def init_parameters_b(shape):
-    return theano.shared(np.zeros(shape).astype(dtype=theano.config.floatX))
-
-mse = lambda h, hh : T.sqr(h - hh).mean()
-
+noise = .3
 n_samples = 10000
+batch_size = 100
 n_epochs = 50
 interval = 2*np.pi
-noise = 0.1
-batch_size = 100
 
-dim = [1, 50, 50, 1]
-d = 0.000001
-lrs_f = np.asarray([.01, .01, .01], dtype='float32')
-params = []
-lrs = []
-lrs_i = []
+dims = [1, 3, 3, 1]
+lrs_f = np.asarray([0.005, 0.005, 0.005]).astype('float32')
+d = 0.00005
+momentum = 0.9
 
-x_train_set_np = interval*np.random.rand(n_samples)
-x_train_set_np = x_train_set_np[..., None]
-y_train_set_np = 0.8*np.sin(x_train_set_np) + noise*np.random.rand(n_samples, 1)
-#y_train_set_np = 0.1*(x_train_set_np-np.pi)**2 + noise*np.random.rand(n_samples, 1)
-y_train_set_np = y_train_set_np
-x_train_set = theano.shared(x_train_set_np.astype('float32'))
-y_train_set = theano.shared(y_train_set_np.astype('float32'))
+shareX = lambda x: theano.shared(np.asarray(x).astype('float32'))
+f_to_approx = lambda x: 0.8*np.sin(x) + (np.random.rand(x.shape[0], 1)-.5)*noise
+mse = lambda h, hh: T.sqr(h-hh).sum(axis=1).mean()
 
-W1 = init_parameters_W((dim[0], dim[1]))
-b1 = init_parameters_b(dim[1])
-params.extend((W1, b1))
-lrs.extend((theano.shared(lrs_f[0]), theano.shared(lrs_f[0])))
-W2 = init_parameters_W((dim[1], dim[2]))
-b2 = init_parameters_b(dim[2])
-params.extend((W2, b2))
-lrs.extend((theano.shared(lrs_f[1]), theano.shared(lrs_f[1])))
-W3 = init_parameters_W((dim[2], dim[3]))
-b3 = init_parameters_b(dim[3])
-params.extend((W3, b3))
-lrs.extend((theano.shared(lrs_f[2]), theano.shared(lrs_f[2])))
-lrs_i = lrs
+x_np = (np.random.rand(n_samples)-0.5)
+x_np = x_np[..., None]
+y_np = f_to_approx(x_np*interval)
+x_th = theano.shared(x_np.astype('float32'))
+y_th = theano.shared(y_np.astype('float32'))
 
-f1 = lambda h : T.tanh(T.dot(h, W1) + b1)
-f2 = lambda h : T.tanh(T.dot(h, W2) + b2)
-f3 = lambda h : T.tanh(T.dot(h, W3) + b3)
+W1, b1 = ifunc.init_W((dims[0], dims[1])), ifunc.init_b(dims[1])
+W2, b2 = ifunc.init_W((dims[1], dims[2])), ifunc.init_b(dims[2])
+W3, b3 = ifunc.init_W((dims[2], dims[3])), ifunc.init_b(dims[3])
+params = [W1, b1, W2, b2, W3, b3]
+lrs_i = list()
+[lrs_i.extend((shareX(lrs_f[i]), shareX(lrs_f[i]))) for i in xrange(3)]
+lrs = OrderedDict(izip(params, lrs_i))
+
+f1 = lambda x: T.tanh(T.dot(x, W1) + b1)
+f2 = lambda x: T.tanh(T.dot(x, W2) + b2)
+f3 = lambda x: T.tanh(T.dot(x, W3) + b3)
 
 x = T.fmatrix()
 y = T.fmatrix()
 index = T.lscalar()
 current_epoch = T.fscalar()
+
 h1 = f1(x)
 h2 = f2(h1)
-predictions = f3(h2)
+pred = f3(h2)
 
-get_predictions = function(inputs=[x],
-                            outputs=predictions)
-get_variables = function(inputs=[x],
-                            outputs=[h1, h2])
+final_cost = mse(pred, y)
 
-cost = mse(predictions, y)
-grads = [T.grad(cost, param) for param in params]
-updates = [(param, param-step*grad) for (param, step, grad) in zip(params, lrs, grads)]
-updates_lrs = [(lr, lr/(1.+d*current_epoch)) for lr in lrs]
+grads, updates = ulru.get_gradients(final_cost, params)
+updates_lrs = get_updates_lrs(d, current_epoch, lrs, lrs_i)
+updates.update(ulru.get_updates_sgd(params, lrs, grads))
+#updates.update(ulru.get_updates_momentum(params, lrs, grads, momentum))
+#updates.update(ulru.get_updates_adadelta(params, lrs, grads, 0.9))
+#updates.update(ulru.get_updates_adagrad(params, lrs, grads))
+#updates.update(ulru.get_updates_rmsprop(params, lrs, grads, 0.9))
 
-lrs_update = function(inputs=[current_epoch],
-                        updates=updates_lrs)
 one_step_train = function(inputs=[index],
-                            outputs = cost,
-                            updates = updates,
-                            givens = {
-                                x:x_train_set[batch_size*index:batch_size*(index+1)],
-                                y:y_train_set[batch_size*index:batch_size*(index+1)]})
+                            updates=updates,
+                            givens={
+                                x:x_th[batch_size*index:batch_size*(index+1)],
+                                y:y_th[batch_size*index:batch_size*(index+1)]})
 
+update_lrs = function(inputs=[current_epoch],
+                            updates=updates_lrs)
+                            
 get_cost = function(inputs=[index],
-                            outputs = cost,
-                            givens = {
-                                x:x_train_set[batch_size*index:batch_size*(index+1)],
-                                y:y_train_set[batch_size*index:batch_size*(index+1)]})
+                            outputs=final_cost,
+                            givens={
+                                x:x_th[batch_size*index:batch_size*(index+1)],
+                                y:y_th[batch_size*index:batch_size*(index+1)]})
+
+get_variables = function(inputs=[x], outputs=[h1, h2])
+
+get_pred = function(inputs=[x],
+                    outputs=pred)
 
 costs = []
 n_batch_epoch = n_samples/batch_size
 for epoch in xrange(n_epochs):
     print('\n')
+    permut = np.random.permutation(n_samples)
+    x_th = x_th[permut]
+    y_th = y_th[permut]
     for batch in xrange(n_batch_epoch):
-        cost = one_step_train(batch)
-        mean_cost = np.asarray([get_cost(i) for i in xrange(n_batch_epoch/10)]).mean()
+        one_step_train(batch)
+        mean_cost = np.asarray([get_cost(i) for i in xrange(n_batch_epoch)]).mean()
         costs.append(mean_cost)
         sys.stdout.write('\repoch %d batch %d mean_cost %f'%(epoch, batch, mean_cost))
         sys.stdout.flush()
-    lrs_update(epoch)
+    update_lrs(epoch)
 
-costs = np.asarray(costs)
-plt.figure()
+plt.figure('costs')
 plt.plot(costs)
 
-x_plot = x_train_set.get_value()
-y_plot = y_train_set.get_value()
+x_pred = np.linspace(-0.5, 0.5, 100).astype('float32')
+x_pred = x_pred[..., None]
+y_pred = get_pred(x_pred)
 plt.figure()
-plt.plot(x_plot[::20], y_plot[::20], 'o')
+plt.plot(x_np[::20, 0], y_np[::20, 0], '*')
+plt.plot(x_pred, y_pred, '*')
 
-x_to_pred = np.linspace(0, interval, 100)
-x_to_pred = x_to_pred[..., None].astype('float32')
-y_to_pred = get_predictions(x_to_pred)
-plt.plot(x_to_pred, y_to_pred, '*')
-
-h1, h2 = get_variables(x_to_pred)
+h1, h2 = get_variables(x_pred)
 uplot.plot_scatter(h1, 'layer 1')
 uplot.plot_scatter(h2, 'layer 2')
 plt.show()
-
