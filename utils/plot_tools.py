@@ -56,7 +56,7 @@ def plot_scatter(x, fig_title):
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter3D(x[:, 0], x[:, 1], x[:, 2])
 
-def plot_scatter_targets(h, hh, fig_title):
+def plot_scatter_targets(h, hh, fig_title, norm_target=False):
 
     fig = plt.figure(fig_title)
 
@@ -64,13 +64,16 @@ def plot_scatter_targets(h, hh, fig_title):
     ax.scatter3D(hh[:, 0], hh[:, 1], hh[:, 2], edgecolor='r', marker='*', alpha=1.)
     ax.scatter3D(h[:, 0], h[:, 1], h[:, 2], edgecolor=None, c='b', marker='+', alpha=1.)
     
-    #delta = hh-h
-    #norms = np.linalg.norm(hh-h, axis=1).mean()
-    #norms = norms[..., np.newaxis]
-    #hhh = h + 1.*delta/norms
-    #ax.scatter3D(hhh[:, 0], hhh[:, 1], hhh[:, 2], edgecolor=None, marker='*', c='g', alpha=1.)
+    if norm_target:
+        delta = hh-h
+        norms = np.linalg.norm(hh-h, axis=1).mean()
+        norms = norms[..., np.newaxis]
+        hhh = h + 1.*delta/norms
+        ax.scatter3D(hhh[:, 0], hhh[:, 1], hhh[:, 2], edgecolor=None, marker='*', c='g', alpha=1.)
 
     for i in xrange(h.shape[0]):
-        #a = Arrow3D([h[i, 0], hhh[i, 0]], [h[i, 1], hhh[i, 1]], [h[i, 2], hhh[i, 2]], mutation_scale=4, lw=1, arrowstyle='-|>', color='b')
-        a = Arrow3D([h[i, 0], hh[i, 0]], [h[i, 1], hh[i, 1]], [h[i, 2], hh[i, 2]], mutation_scale=4, lw=1, arrowstyle='-|>', color='b')
+        if norm_target:
+            a = Arrow3D([h[i, 0], hhh[i, 0]], [h[i, 1], hhh[i, 1]], [h[i, 2], hhh[i, 2]], mutation_scale=4, lw=1, arrowstyle='-|>', color='b')
+        else:
+            a = Arrow3D([h[i, 0], hh[i, 0]], [h[i, 1], hh[i, 1]], [h[i, 2], hh[i, 2]], mutation_scale=4, lw=1, arrowstyle='-|>', color='b')
         ax.add_artist(a)

@@ -27,3 +27,10 @@ def load_dataset(file_name):
             (test_set_x, test_set_y)]
 
     return rval
+
+def generate_sinus(n_samples, interval, noise):
+    x = np.random.rand(n_samples) - 0.5
+    x = x[..., None]
+    f = lambda x : 0.8*np.sin(x*interval) + noise*(np.random.rand(x.shape[0], 1)-.5)
+    y = f(x)
+    return theano.shared(x.astype('float32')), theano.shared(y.astype('float32')), f
