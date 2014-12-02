@@ -17,6 +17,9 @@ class mlp_backprop(object):
         self.layer_dimensions = layer_dimensions
         self.learning_rates = learning_rates
         self.n_layers = len(layer_dimensions) - 1
+        self.params = []
+        self.grads = []
+        self.lr = []
         
         # initialisation of the layers
         self.layers = []
@@ -28,9 +31,9 @@ class mlp_backprop(object):
                 current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], activation=activation)
             self.layers.append(current_layer)
         if not weights == None:
-            current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], weights=weights[i], activation='softmax')
+            current_layer = Layer(layer_dimensions[-2], layer_dimensions[-1], weights=weights[i], activation='softmax')
         else:
-            current_layer = Layer(layer_dimensions[i], layer_dimensions[i+1], activation='softmax')
+            current_layer = Layer(layer_dimensions[-2], layer_dimensions[-1], activation='softmax')
         self.layers.append(current_layer)
 
         # computation of the hidden layers
@@ -51,8 +54,14 @@ class mlp_backprop(object):
         self.updates = []
         for i in xrange(self.n_layers):
             d_W, d_b = T.grad(self.cost, [self.layers[i].W, self.layers[i].b], consider_constant=[self.variables[i]])
-            self.updates.append((self.layers[i].W, self.layers[i].W - self.learning_rates[i]*d_W))
-            self.updates.append((self.layers[i].b, self.layers[i].b - self.learning_rates[i]*d_b))
+            self.params.append(self.layers[i].W)
+            self.params.append(self.layers[i].b)
+            self.grads.append(d_W)
+            self.grads.append(d_b)
+            self.lr.extend((self.learning_rates[i], self.learning_rates[i]))
+
+        for (param, step, grad) in zip(self.params, self.lr, self.grads):
+            self.updates.append((param, param-step*grad))
 
     def softmax_cross_entropy(self, labels):
         return -T.mean(T.log(self.p_y_given_x)[T.arange(labels.shape[0]), labels])
@@ -90,12 +99,12 @@ dataset_file = 'datasets/circles_50000.pkl'
        (test_set_x, test_set_y)] = datasets.load_dataset(dataset_file)
 
 # experience parameters
-layer_dimensions = [2, 3, 3, 3, 2]
-learning_rates = [0.1, 0.1, 0.1, 0.1, 0.1]
+layer_dimensions = [2, 3, 3, 2]
+learning_rates = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 batch_size = 200
 n_batch_train = train_set_x.get_value().shape[0]/batch_size
 n_batch_train_compute = 100
-n_exp = 800
+n_exp = 2000
 d = 0.5
 
 # initialization mlp

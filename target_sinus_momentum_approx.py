@@ -1,5 +1,7 @@
 import numpy as np
 import utils.plot_tools as uplot
+import utils.init_functions as ifunc
+import utils.save_tools as stool
 import sys
 from theano import function
 import matplotlib.pyplot as plt
@@ -7,13 +9,6 @@ import theano
 import theano.tensor as T
 
 np.random.seed(53)
-
-def init_parameters_W(shape):
-    std = 2.*(6./(shape[0] + shape[1]))**(0.5)
-    return theano.shared(np.random.standard_normal(shape).astype(dtype=theano.config.floatX)*std)
-
-def init_parameters_b(shape):
-    return theano.shared(np.zeros(shape).astype(dtype=theano.config.floatX))
 
 mse = lambda h, hh : T.sqr(h - hh).mean()
 f_to_approx = lambda x : 0.8*np.sin(x) + noise*np.random.rand(x.shape[0], 1)
@@ -26,11 +21,11 @@ batch_size = 100
 
 dim = [1, 50, 50, 1]
 d = 0.0
-lrs_f = np.asarray([.01, .01, .01], dtype='float32')
+lrs_f = np.asarray([1., 1., .01], dtype='float32')
 params = []
-lr_t = np.asarray(.01, dtype='float32')
+lr_t = np.asarray(.1, dtype='float32')
 lr_g = np.asarray(.01, dtype='float32')
-momentum = 0.3
+momentum = 0.6
 lrs = []
 
 x_train_set_np = interval*np.random.rand(n_samples)
@@ -40,20 +35,20 @@ y_train_set_np = y_train_set_np
 x_train_set = theano.shared(x_train_set_np.astype('float32'))
 y_train_set = theano.shared(y_train_set_np.astype('float32'))
 
-W1 = init_parameters_W((dim[0], dim[1]))
-b1 = init_parameters_b(dim[1])
+W1 = ifunc.init_parameters_W((dim[0], dim[1]))
+b1 = ifunc.init_parameters_b(dim[1])
 params.extend((W1, b1))
 lrs.extend((theano.shared(lrs_f[0]), theano.shared(lrs_f[0])))
-W2 = init_parameters_W((dim[1], dim[2]))
-b2 = init_parameters_b(dim[2])
-V2 = init_parameters_W((dim[2], dim[1]))
-c2 = init_parameters_b(dim[1])
+W2 = ifunc.init_parameters_W((dim[1], dim[2]))
+b2 = ifunc.init_parameters_b(dim[2])
+V2 = ifunc.init_parameters_W((dim[2], dim[1]))
+c2 = ifunc.init_parameters_b(dim[1])
 params.extend((W2, b2))
 lrs.extend((theano.shared(lrs_f[1]), theano.shared(lrs_f[1])))
 params.extend((V2, c2))
 lrs.extend((theano.shared(lr_g), theano.shared(lr_g)))
-W3 = init_parameters_W((dim[2], dim[3]))
-b3 = init_parameters_b(dim[3])
+W3 = ifunc.init_parameters_W((dim[2], dim[3]))
+b3 = ifunc.init_parameters_b(dim[3])
 params.extend((W3, b3))
 lrs.extend((theano.shared(lrs_f[2]), theano.shared(lrs_f[2])))
 lrs_i = lrs
@@ -143,7 +138,7 @@ for epoch in xrange(n_epochs):
 
 costs = np.asarray(costs)
 plt.figure('final_cost')
-plt.plot(costs[:, 0])
+plt.semilogy(costs[:, 0])
 plt.figure('cost_target_1')
 plt.plot(costs[:, 1])
 plt.figure('cost_target_2')
@@ -166,4 +161,6 @@ y_for = f_to_approx(x_to_pred)
 targets = get_targets(x_to_pred, y_for.astype('float32'))
 uplot.plot_scatter_targets(variables[0], targets[0], 'layer 1')
 uplot.plot_scatter_targets(variables[1], targets[1], 'layer 2')
+
+stool.save_target_3([param.get_value() for param in params], costs, 'Curves_sinus_approx/target_momentum_2.pkl')
 plt.show()
